@@ -1,0 +1,36 @@
+# Code Graph RAG — Default Configuration
+# This YAML file defines all settings for the application.
+# Copy this to development.yaml or production.yaml and customize.
+
+database:
+  path: "data/code-graph.db"
+  max_connections: 5
+  cache_size: 2000        # SQLite page cache (pages)
+  mmap_size: 268435456    # 256 MB memory-mapped I/O
+
+parser:
+  max_file_size: 1048576  # 1 MB max per file
+  max_depth: 10           # Directory recursion depth
+  # Supported languages (tree-sitter grammars to load)
+  languages:
+    - python
+    - typescript
+    - javascript
+    - cpp
+    - c
+    - java
+    - rust
+    - go
+
+embedding:
+  provider: "memory"               # "memory", "onnx", "openai", "ollama"
+  model: "all-MiniLM-L6-v2"
+  batch_size: 8
+  # Uncomment for Ollama:
+  # ollama:
+  #   base_url: "http://localhost:11434"
+  #   model: "nomic-embed-text"
+
+server:
+  port: 3000
+  log_level: "info"       # "debug", "info", "warn", "error"
