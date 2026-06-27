@@ -10,7 +10,8 @@ add_library(types_lib STATIC
     types/parser_types.h      # ParsedEntity, ParseResult structs
     types/agent_types.h       # AgentTask, AgentStatus structs
     types/semantic_types.h    # EmbeddingConfig, SimilarityResult structs
-    types/error_types.h       # Custom error classes
+    types/error_types.h
+    types/error_types.cpp# Custom error classes
   )
 
 # ── Layer 2: Config (depends on: types) ────────────────────────────────────

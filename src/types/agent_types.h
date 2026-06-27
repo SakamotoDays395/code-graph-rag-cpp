@@ -16,8 +16,11 @@
 #include <future>
 #include <memory>
 #include <unordered_map>
+#include <chrono>
 
 namespace codegraph {
+	using TimePoint = std::chrono::steady_clock::time_point;
+
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // AgentType — What kind of worker is this?
@@ -42,8 +45,8 @@ enum class AgentStatus {
     Error,        // Something went wrong
     Shutdown,     // Agent is shutting down
 };
-struct AgentCapabilites {
-    double max_Concurrency;
+struct AgentCapabilities {
+    int max_Concurrency;
     double memoryLimit;
     std::optional<std::vector<int>> cpuAffinity;
     double priority;
@@ -73,8 +76,8 @@ struct AgentTask {
     std::any payload;    // TODO: The actual task data (uncomment when needed)
     int64_t     createdAt = 0;
      // Which agent is handling this
-    std::optional<int64_t> startedAt;
-    std::optional<int64_t> completedAt;
+    std::optional<TimePoint> startedAt;
+    std::optional<TimePoint> completedAt;
     std::optional<std::string> error;
     std::optional<std::any> result;
 };
@@ -83,16 +86,16 @@ struct Agent {
     std::string id;
     AgentType type;
     AgentStatus status;
-    AgentCapabilites capabilities;
+    AgentCapabilities capabilities;
     // Lifecycle Methods
-    virtual std::future<void> initialize() = 0;
-    virtual std::future<void> shutdown() = 0;
+    virtual void initialize() = 0;
+    virtual void shutdown() = 0;
     // Task processing
-    virtual bool canHandle(AgentTask task) = 0;
-    virtual std::future <std::any > process(AgentTask task) = 0;
+    virtual bool canHandle(const AgentTask& task) = 0;
+    virtual std::future <std::any > process(AgentTask& task) = 0;
     // Communication
-    virtual std::future<void> send(AgentMessage<> message) = 0;
-    virtual std::future<void> receive(AgentMessage<> message) = 0;
+    virtual std::future<void> send(AgentMessage<>& message) = 0;
+    virtual std::future<void> receive(AgentMessage<>& message) = 0;
     // Resource Management 
     virtual double getMemoryUsage() = 0;
     virtual double getCpuUsage() = 0;
@@ -134,7 +137,7 @@ struct AgentMetrics {
     int         averageProcessingTime    = 0;
     double      currentMemoryMB = 0.0;
     double      currentCpuPercent  = 0.0;
-    int         lastActivity = 0;
+    TimePoint   lastActivity;
 };
 
 } // namespace codegraph
