@@ -1,0 +1,9 @@
+Content-Length: 177
+
+{"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {"protocolVersion": "2025-03-26", "clientInfo": {"name": "debug-session", "version": "1.0.0"}, "capabilities": {}}}Content-Length: 71
+
+{"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}}Content-Length: 65
+
+{"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}Content-Length: 99
+
+{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_agent_metrics","arguments":{}}}

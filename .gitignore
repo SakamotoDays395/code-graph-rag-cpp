@@ -1,32 +1,35 @@
-# Visual Studio
-.vs/
-out/
+# Build artifacts
 build/
-x64/
-Debug/
-Release/
-*.user
-*.suo
-*.sln
-*.vcxproj
-*.vcxproj.*
+bin/
+obj/
+out/
+*.exe
+*.dll
+*.lib
+*.ilk
+*.pdb
+*.exp
 
-# CMake build artifacts
+# IDE and Environment
+.vs/
+.vscode/
+.idea/
+cmake-build-*/
 CMakeCache.txt
 CMakeFiles/
-cmake_install.cmake
-CMakeSettings.json
+*.user
 
-# Compiled files
-*.obj
-*.exe
-*.pdb
-*.ilk
-*.log
+# Secrets and AI Configs
+.env
+opencode.json
+logs_llm/
+.system_generated/
+scratch/
 
-# Database files (generated at runtime)
-*.db
+# Vcpkg
+vcpkg_installed/
+.vcpkg/
 
-# OS files
-Thumbs.db
+# OS generated files
 .DS_Store
+Thumbs.db

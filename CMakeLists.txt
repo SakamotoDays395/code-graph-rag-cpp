@@ -1,71 +1,46 @@
-###############################################################################
-# Code Graph RAG — C++ Implementation
-# Root CMakeLists.txt
-#
-# HOW TO OPEN IN VISUAL STUDIO COMMUNITY:
-#   1. Open Visual Studio → File → Open → CMake...
-#   2. Navigate to THIS file (CMakeLists.txt)
-#   3. Visual Studio will auto-generate the solution
-#   4. Build → Build All (Ctrl+Shift+B)
-#   5. Debug → Start Debugging (F5)
-#
-# HOW TO BUILD FROM COMMAND LINE:
-#   mkdir build && cd build
-#   cmake .. -G "Visual Studio 17 2022"
-#   cmake --build . --config Debug
-#
-# DEPENDENCIES (install via vcpkg):
-#   vcpkg install sqlite3 yaml-cpp nlohmann-json gtest
-#
-###############################################################################
-cmake_minimum_required(VERSION 3.20)
-project(CodeGraphRAG VERSION 1.0.0 LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.25)
+project(CodeGraphRAG VERSION 1.0.0 LANGUAGES C CXX)
 
-# ── C++20 Standard ──────────────────────────────────────────────────────────
+# Enforce C++20 standard
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# ── Output directories ─────────────────────────────────────────────────────
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+# ---------------------------------------------------------
+# 1. EXTERNAL DEPENDENCIES (Managed by vcpkg.json)
+# ---------------------------------------------------------
+# When you add a new library to vcpkg.json, you must find it here.
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
 
-# ── Compiler warnings (learn from compiler errors!) ────────────────────────
-if(MSVC)
-    add_compile_options(/W4 /WX- /permissive- /utf-8)
-    # /W4   = High warning level (great for learning)
-    # /WX-  = Don't treat warnings as errors (so you can build while learning)
-    # /permissive- = Strict C++ standards compliance
-else()
-    add_compile_options(-Wall -Wextra -Wpedantic)
-endif()
-
-# ── Find Dependencies ──────────────────────────────────────────────────────
-# TODO: Uncomment these as you install dependencies via vcpkg
-# find_package(unofficial-sqlite3 CONFIG REQUIRED)
-# find_package(yaml-cpp CONFIG REQUIRED)
-# find_package(nlohmann_json CONFIG REQUIRED)
-
-# ── Include directories ───────────────────────────────────────────────────
-include_directories(${CMAKE_SOURCE_DIR}/src)
-
-# ── Subdirectories (matches our architecture layers) ───────────────────────
-add_subdirectory(src)
-# add_subdirectory(tests)  # TODO: Uncomment when you add tests
-
-# ── Main executable ───────────────────────────────────────────────────────
-add_executable(code_graph_rag src/main.cpp)
-target_link_libraries(code_graph_rag PRIVATE
-    types_lib
-    config_lib
-    storage_lib
-    # parsers_lib     # TODO: Uncomment as you build each layer
-    agents_lib
-    # semantic_lib
-    # core_lib
+# ---------------------------------------------------------
+# 2. YOUR SOURCE FILES
+# ---------------------------------------------------------
+# Add all new .cpp files here. Do NOT use globbing.
+add_executable(${PROJECT_NAME} 
+    src/main.cpp
+    # src/parsers/tree_sitter_parser.cpp <-- Example of how to add a file later
 )
 
-message(STATUS "=== Code Graph RAG C++ Project Configured ===")
-message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
-message(STATUS "C++ Standard: ${CMAKE_CXX_STANDARD}")
+# Tell CMake where your header (.h) files live
+target_include_directories(${PROJECT_NAME} PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+# ---------------------------------------------------------
+# 3. LINKING DEPENDENCIES
+# ---------------------------------------------------------
+# Link the external libraries to your executable
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+    nlohmann_json::nlohmann_json
+    spdlog::spdlog
+)
+
+# ---------------------------------------------------------
+# 4. THIRD-PARTY (Tree-sitter)
+# ---------------------------------------------------------
+# When you are ready to integrate tree-sitter, uncomment the lines below 
+# to build the grammars from the third_party/ folder and link them.
+
+# add_subdirectory(third_party/tree-sitter-python)
+# target_link_libraries(${PROJECT_NAME} PRIVATE tree-sitter-python)

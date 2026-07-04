@@ -1,0 +1,9 @@
+{
+  "name": "code-graph-rag-cpp",
+  "version": "1.0.0",
+  "dependencies": [
+    "nlohmann-json",
+    "sqlitecpp",
+    "yaml-cpp"
+  ]
+}

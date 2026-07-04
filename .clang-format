@@ -1,0 +1,14 @@
+---
+Language: Cpp
+BasedOnStyle: Google
+
+# CLion style adjustments
+IndentWidth: 4
+AccessModifierOffset: -4
+AllowShortIfStatementsOnASingleLine: false
+AllowShortFunctionsOnASingleLine: Empty
+ColumnLimit: 120
+PointerAlignment: Left
+SortIncludes: true
+Standard: c++20
+...
