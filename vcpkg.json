@@ -4,6 +4,7 @@
   "dependencies": [
     "nlohmann-json",
     "sqlitecpp",
-    "yaml-cpp"
+    "yaml-cpp",
+    "spdlog"
   ]
 }
