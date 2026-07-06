@@ -63,6 +63,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 #   Always prefer CONFIG for vcpkg-managed deps.
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(spdlog        CONFIG REQUIRED)
+find_package(SQLiteCpp CONFIG REQUIRED)
 # Note: SQLiteCpp + yaml-cpp live in vcpkg.json but are NOT used yet.
 #   We do NOT add find_package() calls for them — that's YAGNI:
 #   "You Ain't Gonna Need It (yet)". We add them the moment Lesson 2
@@ -217,6 +218,9 @@ endif()
 # targets inherit, without producing any object code itself.
 add_library(core_lib STATIC)
 set_target_properties(core_lib PROPERTIES LINKER_LANGUAGE CXX)
+target_sources(core_lib PRIVATE
+    src/storage.cpp
+)
 # Concept: target_include_directories on INTERFACE requires the
 #   INTERFACE_KEYWORD form (not PUBLIC/PRIVATE) because there is no
 #   "self" to apply it to. We declare include paths as INTERFACE so
@@ -226,10 +230,11 @@ target_include_directories(core_lib PUBLIC
 )
 target_link_libraries(core_lib
     PUBLIC
-        nlohmann_json::nlohmann_json    # headers exposed via storage.hpp
         spdlog::spdlog                  # headers exposed via logger.hpp
     PRIVATE
         tree_sitter_runtime             # impl detail, never leaked out
+        nlohmann_json::nlohmann_json    # impl detail for parsing in storage.cpp
+        SQLiteCpp                       # impl detail for db access in storage.cpp
 )
 # ───────────────────────────────────────────────────────────────────
 # Lesson 0 — Block F: The executable
@@ -258,14 +263,11 @@ target_link_libraries(${PROJECT_NAME} PRIVATE core_lib)
 # Add when CI / packaging becomes a real need. (Big repo never did.)
 #
 # Pattern: "the best code is the code you didn't write."
-# ════════════════════════════════════════════════════════════════════
-#  SUMMARY — what you can now rely on for every future lesson:
-#
-#    • `core_lib` exists as INTERFACE: carries include paths + link
+
 #      requirements. Lesson 2 promotes it to STATIC and adds the
 #      first source via `target_sources(core_lib PRIVATE src/storage.cpp)`.
 #    • `tree_sitter_runtime` is STATIC, links the C++ grammar only.
-#    • nlohmann_json + spdlog are INTERFACE on core_lib → available
+
 #      everywhere. SQLiteCpp + yaml-cpp join when Lesson 2 needs them.
 #    • Compile-commands exported → clangd / IntelliSense works.
 #    • Generator floor 3.25 matches VS 18 2026 / vcpkg presets.
