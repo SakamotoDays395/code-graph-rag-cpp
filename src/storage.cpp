@@ -46,6 +46,7 @@ namespace{
             type TEXT NOT NULL,
             line INTEGER,
             context TEXT,
+            created_at INTEGER NOT NULL,
             FOREIGN KEY (from_id) REFERENCES entities(id) ON DELETE CASCADE,
             FOREIGN KEY (to_id) REFERENCES entities(id) ON DELETE CASCADE
         );
@@ -106,7 +107,7 @@ namespace{
     
     std::string makeRelationshipId(const Relationship& r) {
         std::ostringstream oss;
-        oss << "|" << r.fromId << ">" << r.toId << "|" << relationTypeToString(r.type);
+        oss << r.fromId << ">" << r.toId << "|" << relationTypeToString(r.type);
         return oss.str();
     }
 
@@ -136,7 +137,7 @@ namespace{
 
             q.bind(1, id);
             q.bind(2, entity.name);
-            q.bind(3, entityTypeToString(entity.type).data());
+            q.bind(3, std::string(entityTypeToString(entity.type)));
             q.bind(4, entity.filePath);
             q.bind(5, entity.location.start.line);
             q.bind(6, entity.location.start.column);
@@ -162,7 +163,13 @@ namespace{
             return id;
         }
         std::optional<Entity> getEntity(const std::string& id) override {
-            SQLite::Statement q(db_, "SELECT * FROM entities WHERE id = ?");
+            SQLite::Statement q(db_, 
+                "SELECT id, name, type, file_path, "
+                "start_line, start_column, start_index, "
+                "end_line, end_column, end_index, "
+                "signature, return_type, modifiers, template_params, base_classes, "
+                "hash, created_at, updated_at "
+                "FROM entities WHERE id = ?");
             q.bind(1, id);
             if (!q.executeStep()) return std::nullopt;
             return rowToEntity(q);
@@ -170,7 +177,12 @@ namespace{
 
         std::vector<Entity> findEntities(const EntityQuery& query) override {
             std::ostringstream sql;
-            sql << "SELECT * FROM entities WHERE 1=1";
+            sql << "SELECT id, name, type, file_path, "
+                << "start_line, start_column, start_index, "
+                << "end_line, end_column, end_index, "
+                << "signature, return_type, modifiers, template_params, base_classes, "
+                << "hash, created_at, updated_at "
+                << "FROM entities WHERE 1=1";
             if (query.type)     sql << " AND type = ?";
             if (query.filePath) sql << " AND file_path = ?";
             if (query.name)     sql << " AND name = ?";
@@ -178,7 +190,7 @@ namespace{
 
             SQLite::Statement q(db_, sql.str());
             int idx = 1;
-            if (query.type)     q.bind(idx++, entityTypeToString(*query.type).data());
+            if (query.type)     q.bind(idx++, std::string(entityTypeToString(*query.type)));
             if (query.filePath) q.bind(idx++, *query.filePath);
             if (query.name)     q.bind(idx++, *query.name);
             q.bind(idx++, *query.limit);
@@ -199,12 +211,12 @@ namespace{
             auto id = makeRelationshipId(r);
             SQLite::Statement q(db_,
                 "INSERT OR REPLACE INTO relationships "
-                "(id, from_id, to_id, type, line, context) "
-                "VALUES (?,?,?,?, ?,?)");
+                "(id, from_id, to_id, type, line, context, created_at) "
+                "VALUES (?,?,?,?, ?,?,?)");
             q.bind(1, id);
             q.bind(2, r.fromId);
             q.bind(3, r.toId);
-            q.bind(4, relationTypeToString(r.type).data());
+            q.bind(4, std::string(relationTypeToString(r.type)));
             if (r.metadata && r.metadata->line) {
                 q.bind(5, *r.metadata->line);
             } else {
@@ -215,12 +227,13 @@ namespace{
             } else {
                 q.bind(6);
             }
+            q.bind(7, nowMillis());
             q.exec();
             return id;
         }
 
         std::vector<Relationship> getRelationshipsForEntity(const std::string& entityId) override {
-            SQLite::Statement q(db_, "SELECT * FROM relationships WHERE from_id=? OR to_id=?");
+            SQLite::Statement q(db_, "SELECT id, from_id, to_id, type, line, context, created_at FROM relationships WHERE from_id=? OR to_id=?");
             q.bind(1, entityId);
             q.bind(2, entityId);
             std::vector<Relationship> out;
@@ -240,7 +253,7 @@ namespace{
         }
 
         std::optional<FileInfo> getFileInfo(const std::string& path) override {
-            SQLite::Statement q(db_, "SELECT * FROM files WHERE path = ?");
+            SQLite::Statement q(db_, "SELECT path, hash, last_indexed, entity_count FROM files WHERE path = ?");
             q.bind(1, path);
             if (!q.executeStep()) return std::nullopt;
             
@@ -284,14 +297,18 @@ namespace{
             if (!q.getColumn("return_type").isNull())
                 e.metadata.returnType = q.getColumn("return_type").getString();
 
-            std::string mods = q.getColumn("modifiers").getString();
-            if (!mods.empty()) e.metadata.modifiers = parseJsonArrayColumn(mods);
-            
-            std::string tparams = q.getColumn("template_params").getString();
-            if (!tparams.empty()) e.metadata.templateParams = parseJsonArrayColumn(tparams);
-            
-            std::string bases = q.getColumn("base_classes").getString();
-            if (!bases.empty()) e.metadata.baseClasses = parseJsonArrayColumn(bases);
+            if (!q.getColumn("modifiers").isNull()) {
+                std::string mods = q.getColumn("modifiers").getString();
+                if (!mods.empty()) e.metadata.modifiers = parseJsonArrayColumn(mods);
+            }
+            if (!q.getColumn("template_params").isNull()) {
+                std::string tparams = q.getColumn("template_params").getString();
+                if (!tparams.empty()) e.metadata.templateParams = parseJsonArrayColumn(tparams);
+            }
+            if (!q.getColumn("base_classes").isNull()) {
+                std::string bases = q.getColumn("base_classes").getString();
+                if (!bases.empty()) e.metadata.baseClasses = parseJsonArrayColumn(bases);
+            }
 
             e.hash      = q.getColumn("hash").getString();
             e.createdAt = q.getColumn("created_at").getInt64();
@@ -312,6 +329,7 @@ namespace{
                 if (!q.getColumn("context").isNull()) meta.context = q.getColumn("context").getString();
                 r.metadata = meta;
             }
+            r.createdAt = q.getColumn("created_at").getInt64();
             return r;
         }
 
