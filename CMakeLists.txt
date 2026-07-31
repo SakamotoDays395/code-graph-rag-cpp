@@ -220,6 +220,7 @@ add_library(core_lib STATIC)
 set_target_properties(core_lib PROPERTIES LINKER_LANGUAGE CXX)
 target_sources(core_lib PRIVATE
     src/storage.cpp
+    src/parser.cpp
 )
 # Concept: target_include_directories on INTERFACE requires the
 #   INTERFACE_KEYWORD form (not PUBLIC/PRIVATE) because there is no

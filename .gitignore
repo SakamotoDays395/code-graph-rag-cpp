@@ -33,3 +33,10 @@ vcpkg_installed/
 # OS generated files
 .DS_Store
 Thumbs.db
+
+# Database and temp files
+*.db
+*.db-wal
+*.db-shm
+test_parser.cpp
+test_complex.cpp
