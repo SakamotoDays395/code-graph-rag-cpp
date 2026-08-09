@@ -151,7 +151,7 @@ add_library(tree_sitter_runtime STATIC ${TREE_SITTER_RUNTIME_SOURCES})
 #   what we want — anyone who links tree_sitter_runtime must be able to
 #   include <tree_sitter/api.h>.
 target_include_directories(tree_sitter_runtime PUBLIC
-    "${TREE_SITTER_VENDOR_INCLUDE_DIR}"
+        "${TREE_SITTER_VENDOR_INCLUDE_DIR}"
 )
 # Concept: tree-sitter grammars are honest ANSI C89. Some compilers
 #   emit warnings on C89 with modern C++ flags. Set the language

@@ -40,3 +40,8 @@ Thumbs.db
 *.db-shm
 test_parser.cpp
 test_complex.cpp
+
+# Debug session artifacts
+*.log
+stderr.txt
+stdout.txt

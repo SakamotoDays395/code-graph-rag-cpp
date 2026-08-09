@@ -8,44 +8,25 @@
   "configurePresets": [
     {
       "name": "vcpkg-debug",
-      "displayName": "Debug (vcpkg + vendored tree-sitter)",
-      "description": "One-click configure for CLion: wires the vcpkg toolchain and the in-repo third_party/ tree-sitter sources so no manual CMake options are needed.",
-      "generator": "Visual Studio 18 2026",
-      "architecture": "x64",
+      "displayName": "Debug (MSVC + Ninja + vcpkg)",
+      "description": "One-click configure: MSVC compiler with Ninja generator, vcpkg toolchain, and vendored tree-sitter sources. No manual CMake options needed.",
+      "generator": "Ninja",
       "binaryDir": "${sourceDir}/build",
-      "vendor": {
-        "jetbrains.com/clion": {
-          "toolchain": "Visual Studio"
-        }
-      },
       "cacheVariables": {
         "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake",
         "VCPKG_TARGET_TRIPLET": "x64-windows",
+        "CMAKE_BUILD_TYPE": "Debug",
         "TREE_SITTER_VENDOR_INCLUDE_DIR": "${sourceDir}/third_party/tree-sitter/lib/include",
         "TREE_SITTER_VENDOR_SOURCE_DIR": "${sourceDir}/third_party/tree-sitter/lib/src",
         "TREE_SITTER_GRAMMARS_ROOT": "${sourceDir}/third_party"
       }
-    },
-    {
-      "name": "vcpkg-release",
-      "displayName": "Release (vcpkg + vendored tree-sitter)",
-      "description": "Optimized build variant using the same vcpkg toolchain and vendored tree-sitter sources.",
-      "inherits": "vcpkg-debug",
-      "binaryDir": "${sourceDir}/build-release"
     }
   ],
   "buildPresets": [
     {
       "name": "vcpkg-debug",
       "displayName": "Build Debug",
-      "configurePreset": "vcpkg-debug",
-      "configuration": "Debug"
-    },
-    {
-      "name": "vcpkg-release",
-      "displayName": "Build Release",
-      "configurePreset": "vcpkg-release",
-      "configuration": "Release"
+      "configurePreset": "vcpkg-debug"
     }
   ]
 }

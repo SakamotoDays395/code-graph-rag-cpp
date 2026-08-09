@@ -1,5 +1,5 @@
 #include <iostream>
-#include <spdlog/spdlog.h>
+#include "logger.hpp"
 
 #include "parser.hpp"
 #include "storage.hpp"
@@ -8,7 +8,7 @@
 
 int main(int argc, char* argv[]) {
     try {
-        spdlog::info("Code Graph RAG System - Stress Test");
+        code_graph::log_info("info","Code Graph RAG System - Stress Test");
 
         // A complex C++ file with nested namespaces, inheritance, 
         // multiple call chains, structs, and variables
@@ -154,26 +154,25 @@ int main() {
 }
         )CPP";
 
-        spdlog::info("Complex test file written, creating storage...");
+        code_graph::log_info("info","Complex test file written, creating storage...");
         auto storage = code_graph::createSqliteStorage("test_complex_graph.db");
         code_graph::Parser parser(*storage);
 
-        spdlog::info("Parsing complex file...");
+        code_graph::log_info("info","Parsing complex file...");
         auto r = parser.parseFile("test_complex.cpp");
-        spdlog::info("parse: ok={} entities={} rels={} ms={}",
+        code_graph::log_info("info","parse: ok={} entities={} rels={} ms={}",
                      r.ok, r.entitiesEmitted, r.relationshipsEmitted, r.durationMs);
 
         auto stats = storage->getStats();
-        spdlog::info("stats: entities={} files={} rels={}",
+        code_graph::log_info("info","stats: entities={} files={} rels={}",
                      stats.totalEntities, stats.totalFiles, stats.totalRelationships);
-
         // List ALL entities
-        spdlog::info("--- ENTITIES ---");
+        code_graph::log_info("info","--- ENTITIES ---");
         code_graph::EntityQuery query;
         query.limit = 200;
         auto es = storage->findEntities(query);
         for (const auto& e : es) {
-            spdlog::info("  [{}] name={:<25} file={} line={}",
+            code_graph::log_info("info","  [{}] name={:<25} file={} line={}",
                          std::string(code_graph::entityTypeToString(e.type)),
                          e.name, e.filePath, e.location.start.line);
         }
@@ -183,7 +182,7 @@ int main() {
         std::remove("test_complex_graph.db-wal");
         std::remove("test_complex_graph.db-shm");
     } catch (const std::exception& ex) {
-        spdlog::error("EXCEPTION: {}", ex.what());
+        code_graph::log_info("error","EXCEPTION: {}", ex.what());
         return 1;
     }
 
