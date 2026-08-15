@@ -20,12 +20,21 @@ public:
 
 
     static Logger& global();
-    template <typename... Args>
-    void info(std::string_view category, typename fmt::fstring<Args...>::t f, Args&&... args);
 
+    template <typename... Args>
+    void debug(std::string_view category, fmt::format_string<Args...> f, Args&&... args);
     void debug(std::string_view category, std::string_view message);
-    void info (std::string_view category, std::string_view message);
-    void warn (std::string_view category, std::string_view message);
+
+    template <typename... Args>
+    void info(std::string_view category, fmt::format_string<Args...> f, Args&&... args);
+    void info(std::string_view category, std::string_view message);
+
+    template <typename... Args>
+    void warn(std::string_view category, fmt::format_string<Args...> f, Args&&... args);
+    void warn(std::string_view category, std::string_view message);
+
+    template <typename... Args>
+    void error(std::string_view category, fmt::format_string<Args...> f, Args&&... args);
     void error(std::string_view category, std::string_view message);
 
 private:
@@ -65,15 +74,36 @@ inline Logger& Logger::global() {
     return instance;
 }
 template <typename... Args>
-inline void Logger::info(std::string_view category, fmt::format_string<Args...> f, Args&&... args) {
+inline void Logger::debug(std::string_view category, fmt::format_string<Args...> f, Args&&... args) {
     std::string message = fmt::format(f, std::forward<Args>(args)...);
     log(spdlog::level::debug, category, message);
+}
+inline void Logger::debug(std::string_view category, std::string_view message) {
+    log(spdlog::level::debug, category, message);
+}
+
+template <typename... Args>
+inline void Logger::info(std::string_view category, fmt::format_string<Args...> f, Args&&... args) {
+    std::string message = fmt::format(f, std::forward<Args>(args)...);
+    log(spdlog::level::info, category, message);
 }
 inline void Logger::info(std::string_view category, std::string_view message) {
     log(spdlog::level::info, category, message);
 }
+
+template <typename... Args>
+inline void Logger::warn(std::string_view category, fmt::format_string<Args...> f, Args&&... args) {
+    std::string message = fmt::format(f, std::forward<Args>(args)...);
+    log(spdlog::level::warn, category, message);
+}
 inline void Logger::warn(std::string_view category, std::string_view message) {
     log(spdlog::level::warn, category, message);
+}
+
+template <typename... Args>
+inline void Logger::error(std::string_view category, fmt::format_string<Args...> f, Args&&... args) {
+    std::string message = fmt::format(f, std::forward<Args>(args)...);
+    log(spdlog::level::err, category, message);
 }
 inline void Logger::error(std::string_view category, std::string_view message) {
     log(spdlog::level::err, category, message);
@@ -91,10 +121,20 @@ inline void Logger::log(spdlog::level::level_enum lvl,
 }
 
 
+template <typename... Args>
+inline void log_debug(std::string_view c, fmt::format_string<Args...> f, Args&&... args) { Logger::global().debug(c, f, std::forward<Args>(args)...); }
 inline void log_debug(std::string_view c, std::string_view m) { Logger::global().debug(c, m); }
+
 template <typename... Args>
 inline void log_info (std::string_view c, fmt::format_string<Args...> f, Args&&... args) { Logger::global().info(c, f, std::forward<Args>(args)...); }
+inline void log_info (std::string_view c, std::string_view m) { Logger::global().info(c, m); }
+
+template <typename... Args>
+inline void log_warn (std::string_view c, fmt::format_string<Args...> f, Args&&... args) { Logger::global().warn(c, f, std::forward<Args>(args)...); }
 inline void log_warn (std::string_view c, std::string_view m) { Logger::global().warn(c, m); }
+
+template <typename... Args>
+inline void log_error(std::string_view c, fmt::format_string<Args...> f, Args&&... args) { Logger::global().error(c, f, std::forward<Args>(args)...); }
 inline void log_error(std::string_view c, std::string_view m) { Logger::global().error(c, m); }
 
 }   
