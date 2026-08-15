@@ -10,7 +10,7 @@
 namespace code_graph {
 
     struct ParseResult {
-        std::string fielPath;
+        std::string filePath;
         int entitiesEmitted = 0;
         int relationshipsEmitted = 0;
         int durationMs = 0;

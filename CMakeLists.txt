@@ -64,12 +64,6 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(spdlog        CONFIG REQUIRED)
 find_package(SQLiteCpp CONFIG REQUIRED)
-# Note: SQLiteCpp + yaml-cpp live in vcpkg.json but are NOT used yet.
-#   We do NOT add find_package() calls for them — that's YAGNI:
-#   "You Ain't Gonna Need It (yet)". We add them the moment Lesson 2
-#   (Storage) actually #includes <SQLiteCpp/SQLiteCpp.h>. Pay only for
-#   what you use.
-#
 # Concept: REQUIRED = build fails immediately if the package is missing.
 #   Non-REQUIRED means "maybe the package exists" — that becomes a
 #   runtime #ifdef nightmare. For core deps, never do that.
@@ -170,52 +164,16 @@ endif()
 # ───────────────────────────────────────────────────────────────────
 # Lesson 0 — Block E: core_lib — your domain code (empty for now)
 # ───────────────────────────────────────────────────────────────────
-# DESIGN QUESTION #1 (live decision):
-#   "Glob or explicit list?"
-#
-#   Option A (explicit list, RECOMMENDED for teachable project):
-#     add_library(core_lib STATIC
-#         src/main.cpp          # placeholder, replaced Lesson 6
-#     )
-#
-#   Option B (glob, used by big repo):
-#     file(GLOB_RECURSE CORE_LIB_SOURCES CONFIGURE_DEPENDS
-#         "${CMAKE_CURRENT_SOURCE_DIR}/src/**/*.cpp")
-#
-#   Trade-off table:
-#     | Aspect              | Explicit list  | Glob            |
-#     |---------------------|----------------|-----------------|
-#     | New file visibility | Must edit CMake| Auto-detected   |
-#     | Stale-build risk    | None           | CONFIGURE_DEPENDS|
-#     | Reviewer diff       | Crystal clear  | Opaque          |
-#     | Correctness         | Guaranteed     | Depends on mtime|
-#
-#   CONFIGURE_DEPENDS makes CMake re-scan when files change, BUT it
-#   breaks some generators (Ninja) and adds reconfigure overhead.
-#   For a project that will reach ~6 files, EXPLICIT wins. We pick A.
-#
-# DESIGN QUESTION #2 (live decision):
-#   "core_lib actual STATIC, or INTERFACE until Lesson 2?"
-#
-#   Option A (interface library):
-#     add_library(core_lib INTERFACE)
-#     Carries usage-requirements only. Emits no build output. Zero
-#     sources is its *intended* state. Switch to STATIC in Lesson 2
-#     by `set_property(TARGET core_lib PROPERTY TYPE STATIC)` and the
-#     first target_sources() call.
-#
-#   Option B (empty STATIC):
-#     add_library(core_lib STATIC)
-#     Almost works — CMake *configures* but MSVC's `lib.exe` refuses
-#     to emit an empty archive, so the link step fails. We tried B
-#     and hit exactly LNK1104. Lesson recorded in AGENTS-style log.
-#
-#   We pick A (INTERFACE) — the honest expression of "core_lib has
-#   no code yet." Promote to STATIC in Lesson 2.
-# Declare core_lib as INTERFACE → no .lib output today, pure usage
-# requirements propagator. `INTERFACE` is CMake's "zero-member archive"
-# pattern. It declares link/include/compile props that downstream
-# targets inherit, without producing any object code itself.
+# ───────────────────────────────────────────────────────────────────
+# Block E: core_lib — domain code (STATIC, grows per lesson)
+# ───────────────────────────────────────────────────────────────────
+# core_lib is a STATIC library. Source files are added via
+# target_sources() as each lesson introduces new .cpp files.
+# Lesson 1: types.hpp (header-only, no .cpp)
+# Lesson 2: storage.cpp
+# Lesson 3: parser.cpp
+# Lesson 5: tools.cpp
+# Lesson 6: main.cpp (in the executable, not core_lib)
 add_library(core_lib STATIC)
 set_target_properties(core_lib PROPERTIES LINKER_LANGUAGE CXX)
 target_sources(core_lib PRIVATE
@@ -223,59 +181,37 @@ target_sources(core_lib PRIVATE
     src/parser.cpp
     src/tools.cpp
 )
-# Concept: target_include_directories on INTERFACE requires the
-#   INTERFACE_KEYWORD form (not PUBLIC/PRIVATE) because there is no
-#   "self" to apply it to. We declare include paths as INTERFACE so
-#   the EXE links core_lib's headers transitively.
 target_include_directories(core_lib PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
 )
 target_link_libraries(core_lib
     PUBLIC
-        spdlog::spdlog                  # headers exposed via logger.hpp
+        spdlog::spdlog                  # exposed via logger.hpp
+        nlohmann_json::nlohmann_json    # exposed via tools.hpp
     PRIVATE
         tree_sitter_runtime             # impl detail, never leaked out
-        nlohmann_json::nlohmann_json    # impl detail for parsing in storage.cpp
-        SQLiteCpp                       # impl detail for db access in storage.cpp
+        SQLiteCpp                       # impl detail, never leaked out
 )
 # ───────────────────────────────────────────────────────────────────
-# Lesson 0 — Block F: The executable
+# Block F: The executable
 # ───────────────────────────────────────────────────────────────────
-# Concept: add_executable. This creates the build-graph node that
-#   actually produces a runnable .exe. Everything above is *support*.
-#
-# Concept: target_sources — adds source files to an already-declared
-#   target. We use this for the EXE so that future lessons can add
-#   tool runtime files without re-editing add_executable()'s signature.
-#
-#   SPACE   for STYLE: appended one-per-line so diffs are clean.
 add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE
     src/main.cpp
 )
-# Concept: PRIVATE link — the EXE is the *terminal* node in the graph.
-#   Nothing links against it, so propagation is irrelevant. PRIVATE
-#   saves compile-time and tells future readers "this stops here."
 target_link_libraries(${PROJECT_NAME} PRIVATE core_lib)
-# ───────────────────────────────────────────────────────────────────
-# Lesson 0 — Block G: Install rules (deferred by YAGNI)
-# ───────────────────────────────────────────────────────────────────
-# We do NOT add install() yet. Installing is for `cmake --install` to
-# place binaries in /usr/local/bin — irrelevant during development.
-# Add when CI / packaging becomes a real need. (Big repo never did.)
-#
-# Pattern: "the best code is the code you didn't write."
 
-#      requirements. Lesson 2 promotes it to STATIC and adds the
-#      first source via `target_sources(core_lib PRIVATE src/storage.cpp)`.
-#    • `tree_sitter_runtime` is STATIC, links the C++ grammar only.
+# ───────────────────────────────────────────────────────────────────
+# Block G: Install rules (deferred by YAGNI)
+# ───────────────────────────────────────────────────────────────────
+# No install() yet. Add when CI / packaging becomes a real need.
 
-#      everywhere. SQLiteCpp + yaml-cpp join when Lesson 2 needs them.
+# ════════════════════════════════════════════════════════════════════
+#  SUMMARY
+#    • core_lib is STATIC with sources: storage.cpp, parser.cpp, tools.cpp
+#    • tree_sitter_runtime is STATIC, links the C++ grammar only.
+#    • PUBLIC deps: spdlog, nlohmann_json (exposed via headers)
+#    • PRIVATE deps: tree_sitter_runtime, SQLiteCpp (impl only)
 #    • Compile-commands exported → clangd / IntelliSense works.
 #    • Generator floor 3.25 matches VS 18 2026 / vcpkg presets.
-#
-#  Next step (run these from D:\imp codes\code-graph-rag-cpp):
-#    cmake --preset vcpkg-debug
-#    cmake --build build --config Debug
-#    .\build\Debug\mini_code_graph.exe
 # ════════════════════════════════════════════════════════════════════
